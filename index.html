@@ -3,246 +3,318 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Math Quiz</title>
+<title>Ultimate 3D Math Quiz 🎯</title>
 <style>
-body {
-    font-family: Arial, sans-serif;
-    background: #f2f2f2;
-    margin: 0;
-    padding: 20px;
-    transition: .3s;
+/* ===== GLOBAL STYLES ===== */
+body{
+  font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;
+  margin:0;padding:20px;
+  background: linear-gradient(135deg,#f2f2f2,#e6e6e6);
+  perspective:1200px;
+  transition: background 0.5s, color 0.5s;
 }
-body.dark { background: #121212; color: white; }
-
-.container {
-    max-width: 450px;
-    margin: auto;
-    padding: 20px;
-    background: white;
-    border-radius: 20px;
-    border: 2px solid #ddd;
-    text-align: center;
-    transition: .3s;
+body.dark{
+  background: linear-gradient(135deg,#121212,#1e1e1e);
+  color:white;
 }
-body.dark .container { background: #1e1e1e; border-color: #444; }
+h1,h2,h3{margin:10px 0;}
+button{outline:none;cursor:pointer;}
 
-.option, .opBtn, .diffBtn, .fracBtn {
-    padding: 15px;
-    margin: 10px 0;
-    border: 2px solid #ccc;
-    border-radius: 15px;
-    background: white;
-    cursor: pointer;
-    transition: .2s;
-    width: 80%;
+/* ===== CONTAINER ===== */
+.container{
+  max-width:500px;margin:20px auto;padding:30px 25px;
+  background:white;border-radius:25px;border:2px solid #ddd;
+  text-align:center;box-shadow:0 8px 30px rgba(0,0,0,0.1);
+  transition:all 0.3s ease-in-out;
+  transform-style: preserve-3d;
+  perspective:1200px;
 }
-body.dark .option, body.dark .opBtn, body.dark .diffBtn, body.dark .fracBtn { background: #2c2c2c; border-color: #555; color: white; }
-.option.correct { background: #b2ffb2 !important; border-color: #1fa31f; }
-.option.wrong { background: #ffb2b2 !important; border-color: #b31e1e; }
-
-#themeBtn {
-    position: absolute; right: 20px; top: 20px;
-    font-size: 25px; cursor: pointer;
+body.dark .container{
+  background:#1f1f1f;border-color:#555;
 }
 
-#playAgain {
-    padding: 12px 20px; background: royalblue; color: white; border-radius: 10px;
-    border: none; font-size: 16px; margin-top: 20px; display: none; cursor: pointer;
+/* ===== BUTTONS / OPTIONS ===== */
+.option, .opBtn, .diffBtn, .fracBtn, .menuBtn{
+  padding:15px;margin:10px 0;border:2px solid #ccc;
+  border-radius:15px;background:white;
+  width:85%; font-size:16px; font-weight:500;
+  transform-style: preserve-3d;
+  transition:all 0.3s ease;
 }
+body.dark .option, body.dark .opBtn, body.dark .diffBtn, body.dark .fracBtn, body.dark .menuBtn{
+  background:#2c2c2c;border-color:#555;color:white;
+}
+
+/* Hover 3D tilt effect */
+.option:hover,.opBtn:hover,.diffBtn:hover,.fracBtn:hover,.menuBtn:hover{
+  transform: rotateX(6deg) rotateY(6deg) scale(1.05);
+  box-shadow:0 15px 35px rgba(0,0,0,0.35);
+  z-index:100;
+}
+/* Click pop effect */
+.option:active,.opBtn:active,.diffBtn:active,.fracBtn:active,.menuBtn:active{
+  transform: rotateX(0deg) rotateY(0deg) scale(0.95);
+}
+
+/* Correct / Wrong Animations */
+.option.correct{
+  background:#b2ffb2!important;border-color:#1fa31f;
+  animation:correctAnim 0.5s forwards;
+}
+.option.wrong{
+  background:#ffb2b2!important;border-color:#b31e1e;
+  animation:wrongAnim 0.5s forwards;
+}
+@keyframes correctAnim{
+  0%{transform:scale(1) rotateY(0deg);}
+  50%{transform:scale(1.2) rotateY(10deg);}
+  100%{transform:scale(1) rotateY(0deg);}
+}
+@keyframes wrongAnim{
+  0%{transform:scale(1);}
+  50%{transform:scale(0.9) rotateY(-10deg);}
+  100%{transform:scale(1);}
+}
+
+/* ===== TEXT & TIMER ===== */
+#questionText,#options{opacity:0;transition:opacity 0.5s ease-in-out;}
+#timer{font-weight:500;margin:15px 0;font-size:18px;}
+#score{font-weight:bold;}
+#progressContainer{width:100%;background:#ddd;border-radius:12px;margin:10px 0;height:18px;}
+#progressBar{height:18px;width:0%;background:royalblue;border-radius:12px;transition:width 0.3s;}
+.smallText{font-size:14px;color:#666;margin-top:5px;}
+body.dark .smallText{color:#aaa;}
+
+/* ===== PLAY AGAIN & MENU ===== */
+#playAgain, .menuBtn{
+  padding:14px 25px;background:royalblue;color:white;border-radius:12px;border:none;
+  font-size:16px;margin-top:20px;display:none;transition:background 0.3s;
+}
+#playAgain:hover, .menuBtn:hover{background:#0052cc;}
+#themeBtn{position:absolute;right:20px;top:20px;font-size:28px;transition:transform 0.3s;}
+#themeBtn:hover{transform:scale(1.2);}
 </style>
 </head>
 <body>
 
+<!-- AUDIO -->
+<audio id="rightAudio" src="right.mp3"></audio>
+<audio id="wrongAudio" src="wrong.mp3"></audio>
+
 <div id="themeBtn">🌙</div>
 
-<!-- Select Operation -->
+<!-- OPERATION SELECT -->
 <div class="container" id="selectionContainer">
-    <h2>Select Operation</h2>
-    <button class="opBtn" data-op="+">Add (+)</button>
-    <button class="opBtn" data-op="-">Subtract (-)</button>
-    <button class="opBtn" data-op="×">Multiply (×)</button>
-    <button class="opBtn" data-op="/">Divide (/)</button>
-    <button class="opBtn" data-op="fraction">Fraction</button>
+<h2>Select Operation</h2>
+<button class="opBtn" data-op="+">Add (+)</button>
+<button class="opBtn" data-op="-">Subtract (-)</button>
+<button class="opBtn" data-op="×">Multiply (×)</button>
+<button class="opBtn" data-op="/">Divide (/)</button>
+<button class="opBtn" data-op="fraction">Fraction</button>
+<p class="smallText">Choose the type of math you want to practice.</p>
 </div>
 
-<!-- Select Fraction Operation -->
+<!-- FRACTION OPERATION -->
 <div class="container" id="fractionOpContainer" style="display:none;">
-    <h2>Select Fraction Operation</h2>
-    <button class="fracBtn" data-frac="+">Add (+)</button>
-    <button class="fracBtn" data-frac="-">Subtract (-)</button>
-    <button class="fracBtn" data-frac="×">Multiply (×)</button>
-    <button class="fracBtn" data-frac="/">Divide (/)</button>
+<h2>Select Fraction Operation</h2>
+<button class="fracBtn" data-frac="+">Add (+)</button>
+<button class="fracBtn" data-frac="-">Subtract (-)</button>
+<button class="fracBtn" data-frac="×">Multiply (×)</button>
+<button class="fracBtn" data-frac="/">Divide (/)</button>
+<p class="smallText">Pick a fraction operation.</p>
 </div>
 
-<!-- Select Difficulty -->
+<!-- DIFFICULTY SELECT -->
 <div class="container" id="difficultyContainer" style="display:none;">
-    <h2>Select Difficulty</h2>
-    <button class="diffBtn" data-diff="simple">Simple</button>
-    <button class="diffBtn" data-diff="medium">Medium</button>
-    <button class="diffBtn" data-diff="hard">Hard</button>
+<h2>Select Difficulty</h2>
+<button class="diffBtn" data-diff="simple">Simple</button>
+<button class="diffBtn" data-diff="medium">Medium</button>
+<button class="diffBtn" data-diff="hard">Hard</button>
+<p class="smallText">Simple = 10s | Medium = 15s | Hard = 20s</p>
 </div>
 
-<!-- Quiz Container -->
+<!-- QUIZ -->
 <div class="container" id="quizContainer" style="display:none;">
-    <h2 id="title"></h2>
-    <h1 id="questionText">Loading...</h1>
-    <h3 id="timer"></h3>
-    <div id="options"></div>
-    <button id="playAgain">Play Again</button>
+<h2 id="title"></h2>
+<h1 id="questionText">Loading...</h1>
+<h3 id="timer"></h3>
+<h3>Score: <span id="score">0</span></h3>
+<div id="progressContainer"><div id="progressBar"></div></div>
+<div id="options"></div>
+<button id="playAgain">Next Question</button>
+<button class="menuBtn">Main Menu</button>
+<p class="smallText">Tap the correct answer to move to next question!</p>
 </div>
 
 <script>
-let operation = "";
-let fractionOp = "";
-let difficulty = "";
-let correctAnswer;
-let timerSec;
-let timerID;
+let operation="", fractionOp="", difficulty="";
+let correctAnswer, timerSec, timerID;
+let score=0, questionsAttempted=0, totalQuestions=20;
 
-// --------- THEME ---------
-document.getElementById("themeBtn").onclick = () => document.body.classList.toggle("dark");
+/* THEME */
+document.getElementById("themeBtn").onclick=()=>document.body.classList.toggle("dark");
 
-// --------- OPERATION SELECT ---------
-document.querySelectorAll(".opBtn").forEach(btn => {
-    btn.onclick = () => {
-        operation = btn.dataset.op;
-        if (operation === "fraction") {
-            document.getElementById("selectionContainer").style.display = "none";
-            document.getElementById("fractionOpContainer").style.display = "block";
-        } else {
-            document.getElementById("selectionContainer").style.display = "none";
-            document.getElementById("difficultyContainer").style.display = "block";
-        }
+/* OPERATION SELECT */
+document.querySelectorAll(".opBtn").forEach(btn=>{
+  btn.onclick=()=>{
+    operation=btn.dataset.op;
+    if(operation==="fraction"){
+      document.getElementById("selectionContainer").style.display="none";
+      document.getElementById("fractionOpContainer").style.display="block";
+    }else{
+      document.getElementById("selectionContainer").style.display="none";
+      document.getElementById("difficultyContainer").style.display="block";
     }
+  }
 });
 
-// --------- FRACTION OPERATION SELECT ---------
-document.querySelectorAll(".fracBtn").forEach(btn => {
-    btn.onclick = () => {
-        fractionOp = btn.dataset.frac;
-        document.getElementById("fractionOpContainer").style.display = "none";
-        document.getElementById("difficultyContainer").style.display = "block";
-    }
+/* FRACTION SELECT */
+document.querySelectorAll(".fracBtn").forEach(btn=>{
+  btn.onclick=()=>{
+    fractionOp=btn.dataset.frac;
+    document.getElementById("fractionOpContainer").style.display="none";
+    document.getElementById("difficultyContainer").style.display="block";
+  }
 });
 
-// --------- DIFFICULTY SELECT ---------
-document.querySelectorAll(".diffBtn").forEach(btn => {
-    btn.onclick = () => {
-        difficulty = btn.dataset.diff;
-        document.getElementById("difficultyContainer").style.display = "none";
-        document.getElementById("quizContainer").style.display = "block";
-        generateQuestion();
-    }
+/* DIFFICULTY SELECT */
+document.querySelectorAll(".diffBtn").forEach(btn=>{
+  btn.onclick=()=>{
+    difficulty=btn.dataset.diff;
+    document.getElementById("difficultyContainer").style.display="none";
+    document.getElementById("quizContainer").style.display="block";
+    generateQuestion();
+  }
 });
 
-// --------- TIMER ---------
-function setTimer() {
-    if (difficulty === "simple") timerSec = 10;
-    else if (difficulty === "medium") timerSec = 15;
-    else timerSec = 20;
-
-    document.getElementById("timer").textContent = "⏳ " + timerSec + " sec";
-
-    timerID = setInterval(() => {
-        timerSec--;
-        document.getElementById("timer").textContent = "⏳ " + timerSec + " sec";
-        if (timerSec <= 0) {
-            clearInterval(timerID);
-            disableOptions();
-            document.getElementById("questionText").textContent = "Time's up!";
-            showPlayAgain();
-        }
-    }, 1000);
+/* TIMER */
+function setTimer(){
+  if(difficulty==="simple") timerSec=10;
+  else if(difficulty==="medium") timerSec=15;
+  else timerSec=20;
+  document.getElementById("timer").textContent="⏳ "+timerSec+" sec";
+  clearInterval(timerID);
+  timerID=setInterval(()=>{
+    timerSec--;
+    document.getElementById("timer").textContent="⏳ "+timerSec+" sec";
+    if(timerSec<=0){
+      clearInterval(timerID);
+      disableOptions();
+      document.getElementById("questionText").textContent="Time's up!";
+      document.getElementById("playAgain").style.display="inline-block";
+      document.querySelector(".menuBtn").style.display="inline-block";
+    }
+  },1000);
 }
 
-// --------- GENERATE QUESTION ---------
-function generateQuestion() {
-    document.getElementById("title").textContent =
-        `Operation: ${operation === "fraction" ? "Fraction " + fractionOp : operation} | Difficulty: ${difficulty}`;
+/* GENERATE QUESTION */
+function generateQuestion(){
+  const questionText=document.getElementById("questionText");
+  const optionsDiv=document.getElementById("options");
+  questionText.style.opacity=0; optionsDiv.style.opacity=0;
+  document.getElementById("playAgain").style.display="none";
+  document.querySelector(".menuBtn").style.display="none";
 
-    let num1 = Math.floor(Math.random() * 20) + 1;
-    let num2 = Math.floor(Math.random() * 20) + 1;
-
-    if (operation === "fraction") {
-        num1 = `${Math.floor(Math.random()*9)+1}/${Math.floor(Math.random()*9)+1}`;
-        num2 = `${Math.floor(Math.random()*9)+1}/${Math.floor(Math.random()*9)+1}`;
-        correctAnswer = evalFraction(num1, num2, fractionOp);
-    } else {
-        if (operation === "+") correctAnswer = num1 + num2;
-        if (operation === "-") correctAnswer = num1 - num2;
-        if (operation === "×") correctAnswer = num1 * num2;
-        if (operation === "/") correctAnswer = (num1 / num2).toFixed(1);
+  setTimeout(()=>{
+    let num1=Math.floor(Math.random()*20)+1;
+    let num2=Math.floor(Math.random()*20)+1;
+    if(operation==="fraction"){
+      num1=`${Math.floor(Math.random()*9)+1}/${Math.floor(Math.random()*9)+1}`;
+      num2=`${Math.floor(Math.random()*9)+1}/${Math.floor(Math.random()*9)+1}`;
+      correctAnswer=evalFraction(num1,num2,fractionOp);
+    }else{
+      if(operation==="+") correctAnswer=num1+num2;
+      if(operation==="-") correctAnswer=num1-num2;
+      if(operation==="×") correctAnswer=num1*num2;
+      if(operation==="/") correctAnswer=(num1/num2).toFixed(1);
     }
-
-    document.getElementById("questionText").textContent =
-        `${num1} ${operation === "fraction" ? fractionOp : operation} ${num2} = ?`;
-
+    questionText.textContent=`${num1} ${operation==="fraction"? fractionOp : operation} ${num2} = ?`;
     generateOptions(correctAnswer);
-    setTimer();
+    questionText.style.opacity=1; optionsDiv.style.opacity=1;
+  },200);
+  setTimer();
 }
 
-// --------- FRACTION CALC ---------
-function evalFraction(a,b,op) {
-    let [n1,d1] = a.split("/").map(Number);
-    let [n2,d2] = b.split("/").map(Number);
-    let resNum, resDen;
-
-    if(op === "+") { resNum = n1*d2 + n2*d1; resDen = d1*d2; }
-    if(op === "-") { resNum = n1*d2 - n2*d1; resDen = d1*d2; }
-    if(op === "×") { resNum = n1*n2; resDen = d1*d2; }
-    if(op === "/") { resNum = n1*d2; resDen = n2*d1; }
-
-    return `${resNum}/${resDen}`;
+/* FRACTION CALC */
+function evalFraction(a,b,op){
+  let [n1,d1]=a.split("/").map(Number);
+  let [n2,d2]=b.split("/").map(Number);
+  let resNum,resDen;
+  if(op==="+"){ resNum=n1*d2+n2*d1; resDen=d1*d2; }
+  if(op==="-"){ resNum=n1*d2-n2*d1; resDen=d1*d2; }
+  if(op==="×"){ resNum=n1*n2; resDen=d1*d2; }
+  if(op==="/"){ resNum=n1*d2; resDen=n2*d1; }
+  return `${resNum}/${resDen}`;
 }
 
-// --------- OPTIONS ---------
-function generateOptions(correct) {
-    let optionsDiv = document.getElementById("options");
-    optionsDiv.innerHTML = "";
-
-    let options = [correct];
-    while (options.length < 4) {
-        let wrong;
-        if(typeof correct === "string") { // fraction
-            let parts = correct.split("/").map(Number);
-            wrong = `${parts[0]+Math.floor(Math.random()*3-1)}/${parts[1]+Math.floor(Math.random()*3-1)}`;
-        } else {
-            wrong = correct + Math.floor(Math.random()*10-5);
-        }
-        if(!options.includes(wrong)) options.push(wrong);
+/* GENERATE OPTIONS */
+function generateOptions(correct){
+  const optionsDiv=document.getElementById("options"); optionsDiv.innerHTML="";
+  let options=[correct];
+  while(options.length<4){
+    let wrong;
+    if(typeof correct==="string"){
+      let wrongNum, wrongDen, wrongFraction;
+      do{
+        wrongNum=Math.floor(Math.random()*9)+1;
+        wrongDen=Math.floor(Math.random()*9)+1;
+        wrongFraction=`${wrongNum}/${wrongDen}`;
+      }while(wrongFraction===correct || options.includes(wrongFraction));
+      wrong=wrongFraction;
+    }else{
+      do{ wrong=correct+Math.floor(Math.random()*10-5); }while(wrong===correct || options.includes(wrong));
     }
-
-    options.sort(()=>Math.random()-0.5);
-
-    options.forEach(op => {
-        let div = document.createElement("div");
-        div.className = "option";
-        div.textContent = op;
-        div.onclick = ()=>checkAnswer(div,op);
-        optionsDiv.appendChild(div);
-    });
+    options.push(wrong);
+  }
+  options.sort(()=>Math.random()-0.5);
+  options.forEach(op=>{
+    let div=document.createElement("div");
+    div.className="option"; div.textContent=op;
+    div.onclick=()=>checkAnswer(div,op);
+    optionsDiv.appendChild(div);
+  });
 }
 
-// --------- CHECK ANSWER ---------
-function checkAnswer(div, selected){
-    clearInterval(timerID);
-    document.querySelectorAll(".option").forEach(o=>o.onclick=null);
-    if(selected == correctAnswer) div.classList.add("correct");
-    else div.classList.add("wrong");
-    showPlayAgain();
+/* CHECK ANSWER */
+function checkAnswer(div,selected){
+  clearInterval(timerID);
+  document.querySelectorAll(".option").forEach(o=>o.onclick=null);
+  questionsAttempted++;
+  if(selected==correctAnswer){
+    div.classList.add("correct");
+    document.getElementById("rightAudio").play();
+    score++; document.getElementById("score").textContent=score;
+    updateProgress();
+    setTimeout(()=>generateQuestion(),500);
+  }else{
+    div.classList.add("wrong");
+    document.getElementById("wrongAudio").play();
+    updateProgress();
+    document.getElementById("playAgain").style.display="inline-block";
+    document.querySelector(".menuBtn").style.display="inline-block";
+  }
 }
 
-// --------- DISABLE OPTIONS ---------
-function disableOptions() {
-    document.querySelectorAll(".option").forEach(o=>o.onclick=null);
-}
+/* DISABLE OPTIONS */
+function disableOptions(){document.querySelectorAll(".option").forEach(o=>o.onclick=null);}
 
-// --------- PLAY AGAIN ---------
-function showPlayAgain(){
-    document.getElementById("playAgain").style.display="block";
+/* PLAY AGAIN BUTTON */
+document.getElementById("playAgain").onclick=()=>generateQuestion();
+
+/* MAIN MENU BUTTON */
+document.querySelector(".menuBtn").onclick=()=>{
+  document.getElementById("quizContainer").style.display="none";
+  document.getElementById("selectionContainer").style.display="block";
+  score=0; questionsAttempted=0;
+  document.getElementById("score").textContent=score;
+  document.getElementById("progressBar").style.width="0%";
+};
+
+/* UPDATE PROGRESS */
+function updateProgress(){
+  let percent=Math.min((questionsAttempted/totalQuestions)*100,100);
+  document.getElementById("progressBar").style.width=percent+"%";
 }
-document.getElementById("playAgain").onclick = ()=> location.reload();
 </script>
-
 </body>
-</html>
+    </html>
